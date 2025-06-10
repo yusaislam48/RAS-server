@@ -2,6 +2,27 @@ const User = require('../models/user.model');
 const AuditLog = require('../models/auditLog.model');
 
 /**
+ * @desc    Get current user profile
+ * @route   GET /api/users/me
+ * @access  Private
+ */
+const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404);
+      throw new Error('User not found');
+    }
+  } catch (error) {
+    res.status(500);
+    throw new Error('Server Error: ' + error.message);
+  }
+};
+
+/**
  * @desc    Get all users
  * @route   GET /api/users
  * @access  Private/Admin
@@ -149,5 +170,6 @@ module.exports = {
   getUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  getCurrentUser
 }; 

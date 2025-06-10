@@ -15,6 +15,7 @@ router.post('/login', loginUser);
 // Protected routes
 router.post('/logout', protect, logoutUser);
 router.get('/profile', protect, getUserProfile);
+router.get('/me', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
 
 // Admin only routes

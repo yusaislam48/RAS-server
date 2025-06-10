@@ -164,7 +164,55 @@ const updateProject = async (req, res) => {
       }
     }
 
+    // Handle users array if provided
+    if (req.body.users && Array.isArray(req.body.users)) {
+      // Get current users to find users that were removed
+      const currentUserIds = project.users.map(u => u.toString());
+      const newUserIds = req.body.users.filter(id => id !== '');
+      
+      // Ensure admin is included in users list
+      if (!newUserIds.includes(project.admin.toString())) {
+        newUserIds.push(project.admin.toString());
+      }
+
+      // Find users to add (not in current users)
+      const usersToAdd = newUserIds.filter(userId => !currentUserIds.includes(userId));
+      
+      // Find users to remove (in current users but not in new users)
+      const usersToRemove = currentUserIds.filter(userId => 
+        !newUserIds.includes(userId) && userId !== project.admin.toString());
+      
+      // Add new users to project and add project to their projects array
+      for (const userId of usersToAdd) {
+        const user = await User.findById(userId);
+        if (user) {
+          // Add project to user's projects if not already there
+          if (!user.projects.includes(project._id)) {
+            user.projects.push(project._id);
+            await user.save();
+          }
+        }
+      }
+      
+      // Remove project from removed users' projects array
+      for (const userId of usersToRemove) {
+        const user = await User.findById(userId);
+        if (user) {
+          user.projects = user.projects.filter(p => !p.equals(project._id));
+          await user.save();
+        }
+      }
+      
+      // Update project's users array
+      project.users = newUserIds;
+    }
+
     const updatedProject = await project.save();
+    
+    // Populate users and admin for response
+    const populatedProject = await Project.findById(updatedProject._id)
+      .populate('admin', 'name email')
+      .populate('users', 'name email');
 
     // Log the update
     await AuditLog.create({
@@ -177,7 +225,7 @@ const updateProject = async (req, res) => {
       userAgent: req.headers['user-agent']
     });
 
-    res.json(updatedProject);
+    res.json(populatedProject);
   } else {
     res.status(404);
     throw new Error('Project not found');

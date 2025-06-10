@@ -14,7 +14,7 @@ const axios = require('axios');
 
 // Configuration
 const API_URL = 'http://localhost:5001/api/sensor-data';
-const API_KEY = 'bcd2abd4492b23fc079f83880e367a84f6d77998bd6996df81244c75e7eb14e7'; // Replace with your actual project API key
+const API_KEY = '8ba036a0dedac411eca2640319dfbd4ba86868926ecf47f1ccde5a0086536cdb'; // Replace with your actual project API key
 const DEVICE_ID = 'IUB002'; // Device with all 7 supported sensors
 const INTERVAL_MS = 5000; // 5 seconds between data points
 
