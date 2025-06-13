@@ -79,13 +79,21 @@ const createDevice = async (req, res) => {
 const getDevices = async (req, res) => {
   try {
     // Extract query parameters
-    const { projects } = req.query;
+    const { projects, projectSpecific } = req.query;
     let filter = {};
     
     // If projects are specified, filter by them
     if (projects) {
       const projectIds = projects.split(',');
       filter.project = { $in: projectIds };
+    } else if (projectSpecific === 'true') {
+      // For superadmin panel, when projectSpecific is true, show only devices from specified projects
+      if (req.user.role === 'superadmin' && req.query.projectId) {
+        filter.project = req.query.projectId;
+      } else if (req.user.role !== 'superadmin') {
+        // If not super admin, only show devices from user's projects
+        filter.project = { $in: req.user.projects };
+      }
     } else if (req.user.role !== 'superadmin') {
       // If not super admin, only show devices from user's projects
       filter.project = { $in: req.user.projects };

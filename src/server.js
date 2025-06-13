@@ -50,14 +50,41 @@ app.use(cors({
 }));
 
 // Rate limiting
-const apiLimiter = rateLimit({
+const standardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again after 15 minutes'
 });
-app.use('/api', apiLimiter);
+
+// Special rate limiter for sensor data with higher limits
+const sensorDataLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Higher limit for sensor data endpoints
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
+// Special rate limiter for frequently accessed endpoints like projects
+const frequentEndpointsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Higher limit for frequently accessed endpoints
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
+// Apply different rate limiters based on the endpoint
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/sensor-data')) {
+    return sensorDataLimiter(req, res, next);
+  } else if (req.path.startsWith('/projects') || req.path.startsWith('/devices') || req.path.startsWith('/auth')) {
+    return frequentEndpointsLimiter(req, res, next);
+  }
+  return standardLimiter(req, res, next);
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
